@@ -1,2 +1,53 @@
-docs/
+# Build output
 build/
+
+# Object/dependency files
+*.o
+*.obj
+*.d
+
+# Libraries
+*.a
+*.so
+*.so.*
+*.dll
+*.lib
+*.dylib
+
+# Executables
+*.exe
+*.out
+
+# Debugging / profiling
+*.pdb
+*.gcda
+*.gcno
+*.gcov
+gmon.out
+
+# Sanitizers
+asan.log*
+ubsan.log*
+tsan.log*
+
+# Core dumps
+core
+core.*
+*.stackdump
+
+# Database runtime files
+*.db
+*.dat
+*.wal
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# OS files
+Thumbs.db
+
+# VS Code
+.vscode/
