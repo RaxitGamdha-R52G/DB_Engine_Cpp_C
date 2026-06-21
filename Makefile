@@ -103,6 +103,19 @@ HELLO_SRC := examples/hello/main.c
 HELLO_TGT := build/examples/hello.exe
 
 # ============================================================
+# Tests
+# ============================================================
+
+TEST_DIR := tests
+TEST_INC := $(TEST_DIR)/include
+
+TEST_BUILD_DIR := $(BUILD_DIR)/tests
+
+TEST_SRCS := $(shell find $(TEST_DIR) -type f -name "*.c")
+
+TEST_EXES := $(patsubst $(TEST_DIR)/%.c,$(TEST_BUILD_DIR)/%.exe,$(TEST_SRCS))
+
+# ============================================================
 # Build Messages
 # ============================================================
 
@@ -123,6 +136,17 @@ all: $(TARGET)
 
 # Examples hello
 hello: $(HELLO_TGT)
+
+# Test Target
+test: $(TEST_EXES)
+	@printf "\n$(BOLD)Running tests ($(BUILD))$(RESET)\n"
+
+	@for test in $(TEST_EXES); do \
+		printf "$(TREE_MID) $(RUN_MSG) %s\n" "$$test"; \
+		$$test || exit 1; \
+	done
+
+	@printf "$(TREE_LAST) $(DONE_MSG) All tests passed\n"
 
 # ============================================================
 # Linking
@@ -166,6 +190,15 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	fi
 	@printf "$(TREE_MID) $(CC_MSG) %s --> %s\n" "$<" "$@"
 	$(Q)$(CC) $(CFLAGS) -c $< -o $@
+
+# test files
+$(TEST_BUILD_DIR)/%.exe: $(TEST_DIR)/%.c
+	@if [ ! -d "$(dir $@)" ]; then \
+		printf "$(TREE_MID) $(MKD_MSG) Creating directory --> %s\n" "$(dir $@)"; \
+		mkdir -p "$(dir $@)"; \
+	fi
+	@printf "$(TREE_MID) $(CC_MSG) %s --> %s\n" "$<" "$@"
+	$(Q)$(CC) $(CFLAGS) -I$(TEST_INC) $< -o $@
 
 # ============================================================
 # Utility Targets
@@ -240,30 +273,8 @@ help:
 # Unknown Target Handler
 # ============================================================
 
-.DEFAULT:
-	@printf "$(TREE_LAST) $(RED)[ERR ]$(RESET) Target '$(YELLOW)%s$(RESET)' does not exist.\n" "$@"
-	@printf "$(TREE_LAST) Run $(CYAN)make help$(RESET) for a list of available commands.\n"
-	@exit 1
+# .DEFAULT:
+# 	@printf "$(TREE_LAST) $(RED)[ERR ]$(RESET) Target '$(YELLOW)%s$(RESET)' does not exist.\n" "$@"
+# 	@printf "$(TREE_LAST) Run $(CYAN)make help$(RESET) for a list of available commands.\n"
+# 	@exit 1
 
-# ============================================================
-# Tests
-# ============================================================
-
-TEST_DIR := tests
-
-TEST_PASS_SRC := $(TEST_DIR)/test_pass.c
-
-TEST_BUILD_DIR := build/tests
-
-TEST_PASS_TGT := $(TEST_BUILD_DIR)/test_pass.exe
-
-test: $(TEST_PASS_TGT)
-	@printf "\n$(BOLD)Running tests$(RESET)\n"
-
-	@printf "$(TREE_MID) $(RUN_MSG) test_pass\n"
-	@./$(TEST_PASS_TGT)
-
-$(TEST_PASS_TGT): $(TEST_PASS_SRC)
-	@mkdir -p $(TEST_BUILD_DIR)
-	@printf "$(TREE_MID) $(CC_MSG) %s --> %s\n" "$<" "$@"
-	$(Q)$(CC) $(CFLAGS) -Itests $< -o $@
