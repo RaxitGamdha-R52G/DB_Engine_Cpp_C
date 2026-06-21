@@ -1,16 +1,172 @@
 # Makefile
 
 # ============================================================
-# Compiler Configuration
+# User Configuration
+# ============================================================
+
+BUILD   ?= debug
+VERBOSE ?= 0
+
+MAKEFLAGS += --no-print-directory
+
+.DEFAULT_GOAL := all
+
+# ============================================================
+# Build Validation
+# ============================================================
+
+VALID_BUILDS := debug release
+
+ifeq ($(filter $(BUILD),$(VALID_BUILDS)),)
+$(error Invalid BUILD='$(BUILD)'. Valid values: debug, release)
+endif
+
+# ============================================================
+# Toolchain
 # ============================================================
 
 CC  := gcc
 CXX := g++
 
-BUILD	?= debug
-VERBOSE	?= 0
+# ============================================================
+# Platform Configuration
+# ============================================================
 
-MAKEFLAGS += --no-print-directory
+ifeq ($(OS),Windows_NT)
+	EXE := .exe
+else
+	EXE :=
+endif
+
+# ============================================================
+# Colors
+# ============================================================
+
+RESET   := \033[0m
+BOLD    := \033[1m
+
+RED     := \033[31m
+GREEN   := \033[32m
+YELLOW  := \033[33m
+BLUE    := \033[34m
+MAGENTA := \033[35m
+CYAN    := \033[36m
+GRAY    := \033[38;5;244m
+
+# ============================================================
+# Tree UI
+# ============================================================
+
+TREE_MID  := $(GRAY)├─$(RESET)
+TREE_LAST := $(GRAY)└─$(RESET)
+TREE_SUB  := $(GRAY)│  └─$(RESET)
+
+# ============================================================
+# Message Labels
+# ============================================================
+
+CC_MSG   := $(CYAN)[  CC]$(RESET)
+LINK_MSG := $(MAGENTA)[LINK]$(RESET)
+CLN_MSG  := $(RED)[ CLN]$(RESET)
+RUN_MSG  := $(YELLOW)[ RUN]$(RESET)
+DONE_MSG := $(GREEN)[DONE]$(RESET)
+MKD_MSG  := $(BLUE)[ MKD]$(RESET)
+
+WARN_MSG := $(YELLOW)[WARN]$(RESET)
+INFO_MSG := $(CYAN)[INFO]$(RESET)
+CFG_MSG  := $(YELLOW)[ CFG]$(RESET)
+ERR_MSG  := $(RED)[ERR ]$(RESET)
+
+# ============================================================
+# Verbose Helpers
+# ============================================================
+
+ifeq ($(VERBOSE),1)
+
+define cmd
+	@printf "$(TREE_SUB) $(GRAY)%s$(RESET)\n" "$(1)"
+	@$(1)
+endef
+
+else
+
+define cmd
+	@$(1)
+endef
+
+endif
+
+# ============================================================
+# Build Configuration
+# ============================================================
+
+COMMON_CFLAGS   := -Wall -Wextra -Wpedantic -Iinclude -MMD -MP
+COMMON_CXXFLAGS := -Wall -Wextra -Wpedantic -Iinclude -MMD -MP
+
+ifeq ($(BUILD),debug)
+
+    BUILD_DIR := build/debug
+
+    CFLAGS   := $(COMMON_CFLAGS)   -std=c23   -g3 -O0
+    CXXFLAGS := $(COMMON_CXXFLAGS) -std=c++23 -g3 -O0 -fno-omit-frame-pointer
+
+else
+
+    BUILD_DIR := build/release
+
+    CFLAGS   := $(COMMON_CFLAGS)   -std=c23   -O2
+    CXXFLAGS := $(COMMON_CXXFLAGS) -std=c++23 -O2
+
+endif
+
+# ============================================================
+# Project Layout
+# ============================================================
+
+SRC_DIR  := src
+TEST_DIR := tests
+
+BIN_DIR  := $(BUILD_DIR)/bin
+OBJ_DIR  := $(BUILD_DIR)/obj
+
+TARGET := $(BIN_DIR)/app$(EXE)
+
+DEBUG_BUILD_DIR   := build/debug
+RELEASE_BUILD_DIR := build/release
+
+DEBUG_TARGET   := $(DEBUG_BUILD_DIR)/bin/app$(EXE)
+RELEASE_TARGET := $(RELEASE_BUILD_DIR)/bin/app$(EXE)
+
+# ============================================================
+# Source Discovery
+# ============================================================
+
+SRCS_CPP := $(shell find $(SRC_DIR) -type f -name "*.cpp")
+SRCS_C   := $(shell find $(SRC_DIR) -type f -name "*.c")
+
+OBJS_CPP := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS_CPP))
+OBJS_C   := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS_C))
+
+OBJS := $(OBJS_CPP) $(OBJS_C)
+
+# ============================================================
+# Examples
+# ============================================================
+
+HELLO_SRC := examples/hello/main.c
+HELLO_TGT := build/examples/hello$(EXE)
+
+# ============================================================
+# Tests
+# ============================================================
+
+TEST_INC := $(TEST_DIR)/include
+
+TEST_BUILD_DIR := $(BUILD_DIR)/tests
+
+TEST_SRCS := $(shell find $(TEST_DIR) -type f -name "*.c")
+
+TEST_EXES := $(patsubst $(TEST_DIR)/%.c,$(TEST_BUILD_DIR)/%$(EXE),$(TEST_SRCS))
 
 # ============================================================
 # Phony Targets
@@ -26,217 +182,151 @@ MAKEFLAGS += --no-print-directory
 .PHONY: test
 
 # ============================================================
-# Colors
+# Main Targets
 # ============================================================
 
-RESET	:= \033[0m
-BOLD    := \033[1m
-
-RED     := \033[31m
-GREEN   := \033[32m
-YELLOW  := \033[33m
-BLUE    := \033[34m
-MAGENTA := \033[35m
-CYAN    := \033[36m
-GRAY    := \033[38;5;244m
-
-# ============================================================
-# Tree Style Prefixes
-# ============================================================
-
-TREE_MID  := $(GRAY)├─$(RESET)
-TREE_LAST := $(GRAY)└─$(RESET)
-
-# ============================================================
-# Verbose / Quiet Mode
-# ============================================================
-
-ifeq ($(VERBOSE),1)
-	Q := 
-else
-	Q := @
-endif
-
-# ============================================================
-# Compiler Flags
-# ============================================================
-
-CFLAGS   := -std=c23 -Wall -Wextra -Wpedantic -Iinclude -MMD -MP
-CXXFLAGS := -std=c++23 -Wall -Wextra -Wpedantic -Iinclude -MMD -MP
-
-ifeq ($(BUILD),debug)
-	CFLAGS	 += -g3 -O0
-	CXXFLAGS += -g3 -O0 -fno-omit-frame-pointer
-
-	BUILD_DIR := build/debug
-else
-	CFLAGS	 += -O2
-	CXXFLAGS += -O2
-
-	BUILD_DIR := build/release
-endif
-
-# ============================================================
-# Project Structure
-# ============================================================
-
-SRC_DIR := src
-
-BIN_DIR := $(BUILD_DIR)/bin
-OBJ_DIR := $(BUILD_DIR)/obj
-
-# FINAL OUTPUT
-TARGET := $(BIN_DIR)/app.exe
-
-# SRC FILES
-SRCS_CPP := $(shell find $(SRC_DIR) -type f -name "*.cpp")
-SRCS_C   := $(shell find $(SRC_DIR) -type f -name "*.c")
-
-# OBJECT FILES
-OBJS_CPP := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS_CPP))
-OBJS_C   := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS_C))
-
-OBJS := $(OBJS_CPP) $(OBJS_C)
-
-# Examples Hello
-HELLO_SRC := examples/hello/main.c
-HELLO_TGT := build/examples/hello.exe
-
-# ============================================================
-# Tests
-# ============================================================
-
-TEST_DIR := tests
-TEST_INC := $(TEST_DIR)/include
-
-TEST_BUILD_DIR := $(BUILD_DIR)/tests
-
-TEST_SRCS := $(shell find $(TEST_DIR) -type f -name "*.c")
-
-TEST_EXES := $(patsubst $(TEST_DIR)/%.c,$(TEST_BUILD_DIR)/%.exe,$(TEST_SRCS))
-
-# ============================================================
-# Build Messages
-# ============================================================
-
-CC_MSG   := $(CYAN)[  CC]$(RESET)
-LINK_MSG := $(MAGENTA)[LINK]$(RESET)
-CLN_MSG  := $(RED)[ CLN]$(RESET)
-RUN_MSG  := $(YELLOW)[ RUN]$(RESET)
-DONE_MSG := $(GREEN)[DONE]$(RESET)
-MKD_MSG  := $(BLUE)[ MKD]$(RESET)
-
-# ============================================================
-# Targets
-# ============================================================
-
-# Default Target
-all: $(TARGET)
-	@printf "$(TREE_LAST) $(DONE_MSG) Build successful --> $(GREEN)%s$(RESET)\n" "$(TARGET)"
-
-# Examples hello
 hello: $(HELLO_TGT)
 
-# Test Target
 test: $(TEST_EXES)
 	@printf "\n$(BOLD)Running tests ($(BUILD))$(RESET)\n"
 
 	@for test in $(TEST_EXES); do \
-		printf "$(TREE_MID) $(RUN_MSG) %s\n" "$$test"; \
+		printf "$(TREE_MID) $(RUN_MSG) Running %s\n" "$$test"; \
 		$$test || exit 1; \
 	done
 
 	@printf "$(TREE_LAST) $(DONE_MSG) All tests passed\n"
 
+
 # ============================================================
-# Linking
+# Default Target & Link Rules
 # ============================================================
+
+ifeq ($(strip $(OBJS)),)
+
+all: $(TARGET)
+	@printf "$(TREE_LAST) $(INFO_MSG) Nothing to build\n"
+
+$(TARGET):
+	@printf "$(TREE_LAST) $(WARN_MSG) No source files found\n"
+
+else
+
+all: $(TARGET)
+	@printf "$(TREE_LAST) $(DONE_MSG) Build successful --> $(GREEN)%s$(RESET)\n" "$(TARGET)"
 
 $(TARGET): $(OBJS) | $(BIN_DIR)
-	@printf "$(TREE_MID) $(LINK_MSG) Linking objects --> $(GREEN)%s$(RESET)\n" "$(TARGET)"
-	$(Q)$(CXX) $(OBJS) -o $(TARGET)
+	@printf "$(TREE_MID) $(LINK_MSG) %s\n" "$(TARGET)"
+	$(call cmd,$(CXX) $(OBJS) -o $(TARGET))
 
-# Examples hello
-$(HELLO_TGT): $(HELLO_SRC)
-	@mkdir -p build/examples
-	$(CC) $< -o $@
+endif
 
 # ============================================================
-# Build Directories
+# Directory Rules
 # ============================================================
 
 $(BIN_DIR):
-	@printf "$(TREE_MID) $(MKD_MSG) Creating bin directory\n"
-	@mkdir -p $(BIN_DIR)
+	@printf "$(TREE_MID) $(MKD_MSG) Creating directory --> %s\n" "$@"
+	@mkdir -p $@
 
 # ============================================================
-# Compilation
+# Compile Rules
 # ============================================================
 
-# C++ files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@if [ ! -d "$(dir $@)" ]; then \
-		printf "$(TREE_MID) $(MKD_MSG) Creating directory --> %s\n" "$(dir $@)"; \
+		printf "$(TREE_MID) $(MKD_MSG) %s\n" "$(dir $@)"; \
 		mkdir -p "$(dir $@)"; \
 	fi
-	@printf "$(TREE_MID) $(CC_MSG) %s --> %s\n" "$<" "$@"
-	$(Q)$(CXX) $(CXXFLAGS) -c $< -o $@
+	@printf "$(TREE_MID) $(CC_MSG) %s\n" "$<"
+	$(call cmd,$(CXX) $(CXXFLAGS) -c $< -o $@)
 
-# C files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@if [ ! -d "$(dir $@)" ]; then \
-		printf "$(TREE_MID) $(MKD_MSG) Creating directory --> %s\n" "$(dir $@)"; \
+		printf "$(TREE_MID) $(MKD_MSG) %s\n" "$(dir $@)"; \
 		mkdir -p "$(dir $@)"; \
 	fi
-	@printf "$(TREE_MID) $(CC_MSG) %s --> %s\n" "$<" "$@"
-	$(Q)$(CC) $(CFLAGS) -c $< -o $@
+	@printf "$(TREE_MID) $(CC_MSG) %s\n" "$<"
+	$(call cmd,$(CC) $(CFLAGS) -c $< -o $@)
 
-# test files
-$(TEST_BUILD_DIR)/%.exe: $(TEST_DIR)/%.c
+# ============================================================
+# Example Rules
+# ============================================================
+
+$(HELLO_TGT): $(HELLO_SRC)
+	@mkdir -p build/examples
+	@printf "$(TREE_MID) $(CC_MSG) %s\n" "$<"
+	$(call cmd,$(CC) $< -o $@)
+	@printf "$(TREE_LAST) $(DONE_MSG) %s\n" "$@"
+
+# ============================================================
+# Test Rules
+# ============================================================
+
+$(TEST_BUILD_DIR)/%$(EXE): $(TEST_DIR)/%.c
 	@if [ ! -d "$(dir $@)" ]; then \
-		printf "$(TREE_MID) $(MKD_MSG) Creating directory --> %s\n" "$(dir $@)"; \
+		printf "$(TREE_MID) $(MKD_MSG) %s\n" "$(dir $@)"; \
 		mkdir -p "$(dir $@)"; \
 	fi
-	@printf "$(TREE_MID) $(CC_MSG) %s --> %s\n" "$<" "$@"
-	$(Q)$(CC) $(CFLAGS) -I$(TEST_INC) $< -o $@
+
+	@printf "$(TREE_MID) $(CC_MSG) %s\n" "$<"
+
+	$(call cmd,$(CC) $(CFLAGS) -I$(TEST_INC) $< -o $@)
 
 # ============================================================
-# Utility Targets
+# Run Targets
 # ============================================================
-
-clean:
-	@printf "$(TREE_LAST) $(CLN_MSG) Removing build directory...\n"
-	@rm -rf build
 
 run-debug:
 	@$(MAKE) BUILD=debug
-	@printf "$(TREE_LAST) $(RUN_MSG) Running debug executable\n"
-	@./build/debug/bin/app.exe
+	@if [ -f "$(DEBUG_TARGET)" ]; then \
+		printf "$(TREE_LAST) $(RUN_MSG) Running %s\n" "$(DEBUG_TARGET)"; \
+		"./$(DEBUG_TARGET)"; \
+	else \
+		printf "$(TREE_LAST) $(WARN_MSG) No executable to run\n"; \
+	fi
 
 run-release:
 	@$(MAKE) BUILD=release
-	@printf "$(TREE_LAST) $(RUN_MSG) Running release executable\n"
-	@./build/release/bin/app.exe
+	@if [ -f "$(RELEASE_TARGET)" ]; then \
+		printf "$(TREE_LAST) $(RUN_MSG) Running %s\n" "$(RELEASE_TARGET)"; \
+		"./$(RELEASE_TARGET)"; \
+	else \
+		printf "$(TREE_LAST) $(WARN_MSG) No executable to run\n"; \
+	fi
 
 gdb:
 	@$(MAKE) BUILD=debug
-	@gdb ./build/debug/bin/app.exe
+	@if [ -f "$(DEBUG_TARGET)" ]; then \
+		printf "$(TREE_LAST) $(RUN_MSG) Launching GDB\n"; \
+		gdb "$(DEBUG_TARGET)"; \
+	else \
+		printf "$(TREE_LAST) $(WARN_MSG) No executable available for GDB\n"; \
+	fi
 
-# Examples hello
 run-hello: hello
-	./$(HELLO_TGT)
+	@printf "$(TREE_LAST) $(RUN_MSG) Running %s\n" "$(HELLO_TGT)"
+	@./$(HELLO_TGT)
 
 # ============================================================
 # Build Modes
 # ============================================================
 
 debug:
-	@printf "$(TREE_MID) $(YELLOW)[ CFG]$(RESET) Debug build (-g3 -O0)\n"
+	@printf "$(TREE_MID) $(CFG_MSG) Debug build\n"
 	@$(MAKE) BUILD=debug
 
 release:
-	@printf "$(TREE_MID) $(YELLOW)[ CFG]$(RESET) Release build (-O2)\n"
+	@printf "$(TREE_MID) $(CFG_MSG) Release build\n"
 	@$(MAKE) BUILD=release
+
+# ============================================================
+# Utility Targets
+# ============================================================
+
+clean:
+	@printf "$(TREE_LAST) $(CLN_MSG) Removing build directory\n"
+	@rm -rf build
 
 # ============================================================
 # Help
@@ -244,27 +334,37 @@ release:
 
 help:
 	@echo ""
-	@printf "$(BOLD)Available Targets$(RESET)\n"
-	@printf "$(BLUE)--------------------------------------------------$(RESET)\n"
-	@echo "make                 Build debug version"
-	@echo "make debug           Build debug version"
-	@echo "make release         Build release version"
-	@echo "make run-debug       Build and run debug version"
-	@echo "make run-release     Build and run release version"
-	@echo "make gdb             Launch GDB on debug build"
-	@echo "make clean           Remove build directory"
-	@echo "make test            Runs defined tests"
-	@echo "make VERBOSE=1       Show compiler commands"
-	@echo ""
-	@echo ""
-	@printf "$(BOLD)Examples Targets$(RESET)\n"
-	@printf "$(BLUE)--------------------------------------------------$(RESET)\n"
-	@echo "make hello           Build Hello World Example"
-	@echo "make run-hello       Build and run Hello World Example"
+	@printf "$(BOLD)Available Targets$(RESET)\n\n"
+
+	@printf "$(CYAN)Build$(RESET)\n"
+	@printf "├─ %-18s %s\n" "make"            "Build project using current BUILD mode (default: debug)"
+	@printf "├─ %-18s %s\n" "make debug"      "Build project in debug mode (-g3 -O0)"
+	@printf "└─ %-18s %s\n\n" "make release"    "Build project in release mode (-O2)"
+
+	@printf "$(CYAN)Run$(RESET)\n"
+	@printf "├─ %-18s %s\n" "make run-debug"   "Build and run the debug executable"
+	@printf "├─ %-18s %s\n" "make run-release" "Build and run the release executable"
+	@printf "└─ %-18s %s\n\n" "make gdb"       "Launch GDB with the debug executable"
+
+	@printf "$(CYAN)Tests$(RESET)\n"
+	@printf "└─ %-18s %s\n\n" "make test" "Build and execute all tests"
+
+	@printf "$(CYAN)Examples$(RESET)\n"
+	@printf "├─ %-18s %s\n" "make hello"      "Build the Hello World example"
+	@printf "└─ %-18s %s\n\n" "make run-hello" "Build and run the Hello World example"
+
+	@printf "$(CYAN)Utilities$(RESET)\n"
+	@printf "├─ %-18s %s\n" "make clean"      "Remove all generated build artifacts"
+	@printf "└─ %-18s %s\n\n" "make help"       "Show available targets and usage information"
+
+	@printf "$(CYAN)Configuration$(RESET)\n"
+	@printf "├─ %-18s %s\n" "BUILD=debug"   "Build using debug configuration"
+	@printf "├─ %-18s %s\n" "BUILD=release" "Build using release configuration"
+	@printf "└─ %-18s %s\n\n" "VERBOSE=1"     "Show compiler and linker commands"
 	@echo ""
 
 # ============================================================
-# Auto Dependency Tracking
+# Dependencies
 # ============================================================
 
 -include $(OBJS:.o=.d)
@@ -273,8 +373,7 @@ help:
 # Unknown Target Handler
 # ============================================================
 
-# .DEFAULT:
-# 	@printf "$(TREE_LAST) $(RED)[ERR ]$(RESET) Target '$(YELLOW)%s$(RESET)' does not exist.\n" "$@"
-# 	@printf "$(TREE_LAST) Run $(CYAN)make help$(RESET) for a list of available commands.\n"
-# 	@exit 1
-
+.DEFAULT:
+	@printf "$(TREE_LAST) $(ERR_MSG) Unknown target: $(YELLOW)%s$(RESET)\n" "$@"
+	@printf "$(TREE_LAST) Run $(CYAN)make help$(RESET)\n"
+	@exit 1
