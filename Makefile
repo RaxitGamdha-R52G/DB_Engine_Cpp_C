@@ -13,6 +13,19 @@ VERBOSE	?= 0
 MAKEFLAGS += --no-print-directory
 
 # ============================================================
+# Phony Targets
+# ============================================================
+
+# Default targets
+.PHONY: all clean run-debug run-release gdb debug release help
+
+# Example targets
+.PHONY: hello run-hello
+
+# Tests targets
+.PHONY: test
+
+# ============================================================
 # Colors
 # ============================================================
 
@@ -207,6 +220,7 @@ help:
 	@echo "make run-release     Build and run release version"
 	@echo "make gdb             Launch GDB on debug build"
 	@echo "make clean           Remove build directory"
+	@echo "make test            Runs defined tests"
 	@echo "make VERBOSE=1       Show compiler commands"
 	@echo ""
 	@echo ""
@@ -232,11 +246,24 @@ help:
 	@exit 1
 
 # ============================================================
-# Phony Targets
+# Tests
 # ============================================================
 
-# Default targets
-.PHONY: all clean run-debug run-release gdb debug release help
+TEST_DIR := tests
 
-# Example targets
-.PHONY: hello run-hello
+TEST_PASS_SRC := $(TEST_DIR)/test_pass.c
+
+TEST_BUILD_DIR := build/tests
+
+TEST_PASS_TGT := $(TEST_BUILD_DIR)/test_pass.exe
+
+test: $(TEST_PASS_TGT)
+	@printf "\n$(BOLD)Running tests$(RESET)\n"
+
+	@printf "$(TREE_MID) $(RUN_MSG) test_pass\n"
+	@./$(TEST_PASS_TGT)
+
+$(TEST_PASS_TGT): $(TEST_PASS_SRC)
+	@mkdir -p $(TEST_BUILD_DIR)
+	@printf "$(TREE_MID) $(CC_MSG) %s --> %s\n" "$<" "$@"
+	$(Q)$(CC) $(CFLAGS) -Itests $< -o $@
