@@ -149,6 +149,9 @@ OBJS_C   := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS_C))
 
 OBJS := $(OBJS_CPP) $(OBJS_C)
 
+# Dependency Files(.d)
+DEP_FILES := $(OBJS:.o=.d)
+
 # ============================================================
 # Examples
 # ============================================================
@@ -167,6 +170,8 @@ TEST_BUILD_DIR := $(BUILD_DIR)/tests
 TEST_SRCS := $(shell find $(TEST_DIR) -type f -name "*.c")
 
 TEST_EXES := $(patsubst $(TEST_DIR)/%.c,$(TEST_BUILD_DIR)/%$(EXE),$(TEST_SRCS))
+
+TEST_OBJS := $(filter-out %main.o,$(OBJS))
 
 # ============================================================
 # Phony Targets
@@ -191,7 +196,7 @@ test: $(TEST_EXES)
 	@printf "\n$(BOLD)Running tests ($(BUILD))$(RESET)\n"
 
 	@for test in $(TEST_EXES); do \
-		printf "$(TREE_MID) $(RUN_MSG) Running %s\n" "$$test"; \
+		printf "$(TREE_MID) $(RUN_MSG) Running $(GREEN)%s$(RESET)\n" "$$test"; \
 		$$test || exit 1; \
 	done
 
@@ -213,10 +218,12 @@ $(TARGET):
 else
 
 all: $(TARGET)
-	@printf "$(TREE_LAST) $(DONE_MSG) Build successful --> $(GREEN)%s$(RESET)\n" "$(TARGET)"
+	@printf "$(TREE_LAST) $(DONE_MSG) Build Successful --> $(GREEN)%s$(RESET)\n" "$(TARGET)"
 
 $(TARGET): $(OBJS) | $(BIN_DIR)
-	@printf "$(TREE_MID) $(LINK_MSG) %s\n" "$(TARGET)"
+	@for ob_file in $(OBJS); do \
+		printf "$(TREE_MID) $(LINK_MSG) Linking object file $(CYAN)%s$(RESET) --> $(MAGENTA)%s$(RESET)\n" "$$ob_file" "$@"; \
+	done
 	$(call cmd,$(CXX) $(OBJS) -o $(TARGET))
 
 endif
@@ -226,7 +233,7 @@ endif
 # ============================================================
 
 $(BIN_DIR):
-	@printf "$(TREE_MID) $(MKD_MSG) Creating directory --> %s\n" "$@"
+	@printf "$(TREE_MID) $(MKD_MSG) Creating directory --> $(BLUE)%s$(RESET)\n" "$@"
 	@mkdir -p $@
 
 # ============================================================
@@ -235,18 +242,18 @@ $(BIN_DIR):
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@if [ ! -d "$(dir $@)" ]; then \
-		printf "$(TREE_MID) $(MKD_MSG) %s\n" "$(dir $@)"; \
+		printf "$(TREE_MID) $(MKD_MSG) Creating directory --> $(BLUE)%s$(RESET)\n" "$(dir $@)"; \
 		mkdir -p "$(dir $@)"; \
 	fi
-	@printf "$(TREE_MID) $(CC_MSG) %s\n" "$<"
+	@printf "$(TREE_MID) $(CC_MSG) Compiling source file $(CYAN)%s$(RESET) --> $(GREEN)%s$(RESET)\n" "$<" "$@"
 	$(call cmd,$(CXX) $(CXXFLAGS) -c $< -o $@)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@if [ ! -d "$(dir $@)" ]; then \
-		printf "$(TREE_MID) $(MKD_MSG) %s\n" "$(dir $@)"; \
+		printf "$(TREE_MID) $(MKD_MSG) Creating directory --> $(BLUE)%s$(RESET)\n" "$(dir $@)"; \
 		mkdir -p "$(dir $@)"; \
 	fi
-	@printf "$(TREE_MID) $(CC_MSG) %s\n" "$<"
+	@printf "$(TREE_MID) $(CC_MSG) Compiling source file $(CYAN)%s$(RESET) --> $(GREEN)%s$(RESET)\n" "$<" "$@"
 	$(call cmd,$(CC) $(CFLAGS) -c $< -o $@)
 
 # ============================================================
@@ -263,15 +270,15 @@ $(HELLO_TGT): $(HELLO_SRC)
 # Test Rules
 # ============================================================
 
-$(TEST_BUILD_DIR)/%$(EXE): $(TEST_DIR)/%.c
+$(TEST_BUILD_DIR)/%$(EXE): $(TEST_DIR)/%.c $(TEST_OBJS)
 	@if [ ! -d "$(dir $@)" ]; then \
-		printf "$(TREE_MID) $(MKD_MSG) %s\n" "$(dir $@)"; \
+		printf "$(TREE_MID) $(MKD_MSG) Creating directory --> $(BLUE)%s$(RESET)\n" "$(dir $@)"; \
 		mkdir -p "$(dir $@)"; \
 	fi
 
-	@printf "$(TREE_MID) $(CC_MSG) %s\n" "$<"
+	@printf "$(TREE_MID) $(CC_MSG) Compiling test file $(CYAN)%s$(RESET) --> $(GREEN)%s$(RESET)\n" "$<" "$@"
 
-	$(call cmd,$(CC) $(CFLAGS) -I$(TEST_INC) $< -o $@)
+	$(call cmd,$(CC) $(CFLAGS) -I$(TEST_INC) $^ -o $@)
 
 # ============================================================
 # Run Targets
@@ -280,7 +287,7 @@ $(TEST_BUILD_DIR)/%$(EXE): $(TEST_DIR)/%.c
 run-debug:
 	@$(MAKE) BUILD=debug
 	@if [ -f "$(DEBUG_TARGET)" ]; then \
-		printf "$(TREE_LAST) $(RUN_MSG) Running %s\n" "$(DEBUG_TARGET)"; \
+		printf "$(TREE_LAST) $(RUN_MSG) Running $(GREEN)%s$(RESET)\n" "$(DEBUG_TARGET)"; \
 		"./$(DEBUG_TARGET)"; \
 	else \
 		printf "$(TREE_LAST) $(WARN_MSG) No executable to run\n"; \
@@ -289,7 +296,7 @@ run-debug:
 run-release:
 	@$(MAKE) BUILD=release
 	@if [ -f "$(RELEASE_TARGET)" ]; then \
-		printf "$(TREE_LAST) $(RUN_MSG) Running %s\n" "$(RELEASE_TARGET)"; \
+		printf "$(TREE_LAST) $(RUN_MSG) Running $(GREEN)%s$(RESET)\n" "$(RELEASE_TARGET)"; \
 		"./$(RELEASE_TARGET)"; \
 	else \
 		printf "$(TREE_LAST) $(WARN_MSG) No executable to run\n"; \
@@ -305,7 +312,7 @@ gdb:
 	fi
 
 run-hello: hello
-	@printf "$(TREE_LAST) $(RUN_MSG) Running %s\n" "$(HELLO_TGT)"
+	@printf "$(TREE_LAST) $(RUN_MSG) Running $(GREEN)%s$(RESET)\n" "$(HELLO_TGT)"
 	@./$(HELLO_TGT)
 
 # ============================================================
@@ -367,7 +374,7 @@ help:
 # Dependencies
 # ============================================================
 
--include $(OBJS:.o=.d)
+-include $(wildcard $(DEP_FILES))
 
 # ============================================================
 # Unknown Target Handler
