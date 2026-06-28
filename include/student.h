@@ -4,15 +4,21 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct{
-    char student_id[16];
-    char name[64];
-    char email[128];
+#define MAX_RECORDS 1000
+#define STUDENT_ID_LEN 16
+#define STUDENT_NAME_LEN 64
+#define STUDENT_EMAIL_LEN 128
+
+typedef struct
+{
+    char student_id[STUDENT_ID_LEN];
+    char name[STUDENT_NAME_LEN];
+    char email[STUDENT_EMAIL_LEN];
     uint32_t age;
     float gpa;
     bool isActive;
 } Student;
 
-void print_student_record(const Student *student);
+void student_display(const Student *s);
 
 #endif /* STUDENT_H  */
