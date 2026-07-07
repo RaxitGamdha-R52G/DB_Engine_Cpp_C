@@ -20,4 +20,6 @@ typedef struct
 
 void student_display(const Student *s);
 
+bool student_validate(const Student *student);
+
 #endif /* STUDENT_H  */

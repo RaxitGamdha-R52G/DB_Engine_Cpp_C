@@ -13,7 +13,8 @@ typedef enum
     STUDENT_ERR_ALREADY_EXISTS,
     STUDENT_ERR_TABLE_FULL,
     STUDENT_ERR_TABLE_EMPTY,
-    STUDENT_ERR_OUT_OF_MEMORY
+    STUDENT_ERR_OUT_OF_MEMORY,
+    STUDENT_ERR_VALIDATE
 } StudentStatus;
 
 typedef struct StudentTable StudentTable;

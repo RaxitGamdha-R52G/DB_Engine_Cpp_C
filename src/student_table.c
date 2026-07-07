@@ -24,6 +24,9 @@ StudentStatus student_insert(StudentTable *tbl, const Student *student)
     if (tbl == NULL || student == NULL)
         return STUDENT_ERR_INVALID_ARGUMENT;
 
+    if (!student_validate(student))
+        return STUDENT_ERR_VALIDATE;
+
     if (tbl->count >= MAX_RECORDS)
         return STUDENT_ERR_TABLE_FULL;
 
@@ -129,6 +132,9 @@ StudentStatus student_update(StudentTable *tbl, const char *id, const Student *n
 {
     if (tbl == NULL || id == NULL || new_data == NULL)
         return STUDENT_ERR_INVALID_ARGUMENT;
+
+    if (!student_validate(new_data))
+        return STUDENT_ERR_VALIDATE;
 
     uint32_t found = 0;
 
@@ -241,17 +247,23 @@ void student_display_all(const StudentTable *tbl)
 
 uint32_t student_count(const StudentTable *tbl)
 {
+    if (tbl == NULL)
+        return 0;
+
     return tbl->count;
 }
 
 static int compare_student_id(const void *a, const void *b)
 {
-    const Student *s1 = *(const Student * const *)a;
-    const Student *s2 = *(const Student * const *)b;
+    const Student *s1 = *(const Student *const *)a;
+    const Student *s2 = *(const Student *const *)b;
 
-    if(s1 == NULL && s2 == NULL) return 0; 
-    if(s1 == NULL) return 1;
-    if(s2 == NULL) return -1;
+    if (s1 == NULL && s2 == NULL)
+        return 0;
+    if (s1 == NULL)
+        return 1;
+    if (s2 == NULL)
+        return -1;
 
     return strncmp(s1->student_id, s2->student_id, STUDENT_ID_LEN);
 }
@@ -266,12 +278,15 @@ void student_sort_by_id(StudentTable *tbl)
 
 static int compare_student_name(const void *a, const void *b)
 {
-    const Student *s1 = *(const Student * const *)a;
-    const Student *s2 = *(const Student * const *)b;
+    const Student *s1 = *(const Student *const *)a;
+    const Student *s2 = *(const Student *const *)b;
 
-    if(s1 == NULL && s2 == NULL) return 0; 
-    if(s1 == NULL) return 1;
-    if(s2 == NULL) return -1;
+    if (s1 == NULL && s2 == NULL)
+        return 0;
+    if (s1 == NULL)
+        return 1;
+    if (s2 == NULL)
+        return -1;
 
     return strncmp(s1->name, s2->name, STUDENT_NAME_LEN);
 }

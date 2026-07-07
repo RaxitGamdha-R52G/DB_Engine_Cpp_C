@@ -382,24 +382,196 @@ int test_delete_not_found_nonempty(void)
     return result;
 }
 
+int test_create_table(void)
+{
+    StudentTable *tbl = student_table_create();
+
+    int result = (tbl != NULL);
+
+    student_table_destroy(tbl);
+
+    return result;
+}
+
+int test_insert_invalid_student(void)
+{
+    StudentTable *tbl = student_table_create();
+
+    Student s = make_student(
+        "",
+        "Alice",
+        "alice@test.com",
+        20,
+        3.5f);
+
+    StudentStatus status = student_insert(tbl, &s);
+
+    student_table_destroy(tbl);
+
+    return status == STUDENT_ERR_VALIDATE;
+}
+
+int test_update_invalid_student(void)
+{
+    StudentTable *tbl = student_table_create();
+
+    Student s = make_student(
+        "S001",
+        "Alice",
+        "alice@test.com",
+        20,
+        3.5f);
+
+    student_insert(tbl, &s);
+
+    Student bad = make_student(
+        "S001",
+        "",
+        "alice@test.com",
+        20,
+        3.5f);
+
+    StudentStatus status =
+        student_update(tbl, "S001", &bad);
+
+    student_table_destroy(tbl);
+
+    return status == STUDENT_ERR_VALIDATE;
+}
+
+int test_find_by_id_null_arguments(void)
+{
+    StudentTable *tbl = student_table_create();
+
+    int result =
+        student_find_by_id(NULL, "S001") == NULL &&
+        student_find_by_id(tbl, NULL) == NULL;
+
+    student_table_destroy(tbl);
+
+    return result;
+}
+
+int test_find_by_name_null_arguments(void)
+{
+    StudentTable *tbl = student_table_create();
+
+    int result =
+        student_find_by_name(NULL, "Alice") == NULL &&
+        student_find_by_name(tbl, NULL) == NULL;
+
+    student_table_destroy(tbl);
+
+    return result;
+}
+
+int test_find_by_id_not_found(void)
+{
+    StudentTable *tbl = student_table_create();
+
+    int result =
+        student_find_by_id(tbl, "UNKNOWN") == NULL;
+
+    student_table_destroy(tbl);
+
+    return result;
+}
+
+int test_find_by_name_not_found(void)
+{
+    StudentTable *tbl = student_table_create();
+
+    int result =
+        student_find_by_name(tbl, "Nobody") == NULL;
+
+    student_table_destroy(tbl);
+
+    return result;
+}
+
+int test_student_count_null(void)
+{
+    return student_count(NULL) == 0;
+}
+
+int test_destroy_null(void)
+{
+    student_table_destroy(NULL);
+    return 1;
+}
+
+int test_sort_null(void)
+{
+    student_sort_by_id(NULL);
+    student_sort_by_name(NULL);
+
+    return 1;
+}
+
+int test_delete_twice(void)
+{
+    StudentTable *tbl = student_table_create();
+
+    Student s = make_student(
+        "S001",
+        "Alice",
+        "alice@test.com",
+        20,
+        3.5f);
+
+    student_insert(tbl, &s);
+
+    int result =
+        student_delete(tbl, "S001") == STUDENT_OK &&
+        student_delete(tbl, "S001") == STUDENT_ERR_TABLE_EMPTY;
+
+    student_table_destroy(tbl);
+
+    return result;
+}
+
 int main(void)
 {
+    /* Table lifecycle */
+    RUN_TEST(test_create_table);
+    RUN_TEST(test_destroy_null);
+
+    /* Insert */
     RUN_TEST(test_insert_and_find);
     RUN_TEST(test_duplicate_insert);
     RUN_TEST(test_table_full);
-    RUN_TEST(test_find_by_name);
-    RUN_TEST(test_delete_student);
-    RUN_TEST(test_delete_not_found);
-    RUN_TEST(test_update_student);
-    RUN_TEST(test_update_not_found);
-    RUN_TEST(test_student_count);
-    RUN_TEST(test_sort_by_id);
-    RUN_TEST(test_sort_by_name);
     RUN_TEST(test_insert_null_table);
     RUN_TEST(test_insert_null_student);
-    RUN_TEST(test_update_null_arguments);
-    RUN_TEST(test_delete_null_arguments);
+    RUN_TEST(test_insert_invalid_student);
+
+    /* Delete */
+    RUN_TEST(test_delete_student);
+    RUN_TEST(test_delete_not_found);
     RUN_TEST(test_delete_not_found_nonempty);
+    RUN_TEST(test_delete_null_arguments);
+    RUN_TEST(test_delete_twice);
+
+    /* Update */
+    RUN_TEST(test_update_student);
+    RUN_TEST(test_update_not_found);
+    RUN_TEST(test_update_null_arguments);
+    RUN_TEST(test_update_invalid_student);
+
+    /* Find */
+    RUN_TEST(test_find_by_name);
+    RUN_TEST(test_find_by_id_not_found);
+    RUN_TEST(test_find_by_name_not_found);
+    RUN_TEST(test_find_by_id_null_arguments);
+    RUN_TEST(test_find_by_name_null_arguments);
+
+    /* Count */
+    RUN_TEST(test_student_count);
+    RUN_TEST(test_student_count_null);
+
+    /* Sort */
+    RUN_TEST(test_sort_by_id);
+    RUN_TEST(test_sort_by_name);
+    RUN_TEST(test_sort_null);
 
     return test_summary();
 }
