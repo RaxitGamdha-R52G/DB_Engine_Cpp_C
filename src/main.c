@@ -12,7 +12,7 @@ int main(void)
         .email = "alice@borderland.com",
         .age = 24,
         .gpa = 8.9f,
-        .isActive = true};
+        .is_active = true};
 
     Student student2 = {
         .student_id = "123456789012346",
@@ -20,7 +20,7 @@ int main(void)
         .email = "alice@borderland.com",
         .age = 20,
         .gpa = 8.0f,
-        .isActive = true};
+        .is_active = true};
 
     Student student3 = {
         .student_id = "123456789012347",
@@ -28,7 +28,7 @@ int main(void)
         .email = "alice@borderland.com",
         .age = 25,
         .gpa = 9.4f,
-        .isActive = true};
+        .is_active = true};
 
     if (student_insert(tbl, &student1) == STUDENT_OK)
         printf("Insert Successful\n");

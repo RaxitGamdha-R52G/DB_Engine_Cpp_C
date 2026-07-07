@@ -17,6 +17,6 @@ void student_display(const Student *s)
     printf("Email     : %s\n", s->email);
     printf("Age       : %u\n", s->age);
     printf("GPA       : %.2f\n", s->gpa);
-    printf("Active    : %s\n", s->isActive ? "Yes" : "No");
+    printf("Active    : %s\n", s->is_active ? "Yes" : "No");
     printf("----------------------------\n");
 }

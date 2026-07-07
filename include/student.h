@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define MAX_RECORDS 1000
 #define STUDENT_ID_LEN 16
 #define STUDENT_NAME_LEN 64
 #define STUDENT_EMAIL_LEN 128
@@ -16,7 +15,7 @@ typedef struct
     char email[STUDENT_EMAIL_LEN];
     uint32_t age;
     float gpa;
-    bool isActive;
+    bool is_active;
 } Student;
 
 void student_display(const Student *s);

@@ -3,6 +3,8 @@
 
 #include "student.h"
 
+#define MAX_RECORDS 1000
+
 typedef enum
 {
     STUDENT_OK = 0,
@@ -32,4 +34,4 @@ void student_display_all(const StudentTable *tbl);
 void student_sort_by_id(StudentTable *tbl);
 void student_sort_by_name(StudentTable *tbl);
 
-#endif
+#endif /* STUDENT_TABLE_H */

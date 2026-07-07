@@ -19,7 +19,7 @@ static Student make_student(
 
     s.age = age;
     s.gpa = gpa;
-    s.isActive = true;
+    s.is_active = true;
 
     return s;
 }
@@ -285,7 +285,7 @@ int test_sort_by_name(void)
     student_insert(tbl, &s1);
     student_insert(tbl, &s2);
     student_insert(tbl, &s3);
-    student_sort_by_id(tbl);
+    student_sort_by_name(tbl);
 
     const Student *s = student_find_by_name(tbl, "Alice");
 

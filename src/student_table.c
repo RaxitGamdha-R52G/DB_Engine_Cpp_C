@@ -233,7 +233,7 @@ void student_display_all(const StudentTable *tbl)
         printf("%-4u %-5.2f %-6s\n",
                s->age,
                s->gpa,
-               s->isActive ? "Yes" : "No");
+               s->is_active ? "Yes" : "No");
     }
 
     printf("---------------------------------------------------------------------------------------\n");
