@@ -16,5 +16,6 @@ int test_insert_null_table(void);
 int test_insert_null_student(void);
 int test_update_null_arguments(void);
 int test_delete_null_arguments(void);
+int test_delete_not_found_nonempty(void);
 
 #endif /* TEST_STUDENT_H */

@@ -363,6 +363,25 @@ int test_delete_null_arguments(void)
     return result;
 }
 
+int test_delete_not_found_nonempty(void)
+{
+    StudentTable *tbl = student_table_create();
+
+    Student s = make_student(
+        "S001",
+        "Alice",
+        "alice@test.com",
+        20,
+        3.8f);
+    int result =
+        student_insert(tbl, &s) == STUDENT_OK &&
+        student_delete(tbl, "123456789") == STUDENT_ERR_NOT_FOUND;
+
+    student_table_destroy(tbl);
+
+    return result;
+}
+
 int main(void)
 {
     RUN_TEST(test_insert_and_find);
@@ -380,6 +399,7 @@ int main(void)
     RUN_TEST(test_insert_null_student);
     RUN_TEST(test_update_null_arguments);
     RUN_TEST(test_delete_null_arguments);
+    RUN_TEST(test_delete_not_found_nonempty);
 
     return test_summary();
 }
