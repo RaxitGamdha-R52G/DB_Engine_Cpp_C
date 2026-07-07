@@ -298,3 +298,38 @@ void student_sort_by_name(StudentTable *tbl)
 
     qsort(tbl->records, MAX_RECORDS, sizeof(Student *), compare_student_name);
 }
+
+void student_print_status(const char *operation, StudentStatus status)
+{
+    printf("%-10s : ", operation);
+
+    switch (status)
+    {
+    case STUDENT_OK:
+        printf("SUCCESS\n");
+        break;
+    case STUDENT_ERR_INVALID_ARGUMENT:
+        printf("INVALID ARGUMENT\n");
+        break;
+    case STUDENT_ERR_NOT_FOUND:
+        printf("NOT FOUND\n");
+        break;
+    case STUDENT_ERR_ALREADY_EXISTS:
+        printf("ALREADY EXISTS\n");
+        break;
+    case STUDENT_ERR_TABLE_FULL:
+        printf("TABLE FULL\n");
+        break;
+    case STUDENT_ERR_TABLE_EMPTY:
+        printf("TABLE EMPTY\n");
+        break;
+    case STUDENT_ERR_OUT_OF_MEMORY:
+        printf("OUT OF MEMORY\n");
+        break;
+    case STUDENT_ERR_VALIDATE:
+        printf("VALIDATION FAILED\n");
+        break;
+    default:
+        printf("UNKNOWN ERROR\n");
+    }
+}

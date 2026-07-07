@@ -1,28 +1,8 @@
 #include <string.h>
 
 #include "test_framework.h"
-#include "student_table.h"
 #include "test_student.h"
-
-static Student make_student(
-    const char *id,
-    const char *name,
-    const char *email,
-    uint32_t age,
-    float gpa)
-{
-    Student s = {0};
-
-    strncpy(s.student_id, id, STUDENT_ID_LEN - 1);
-    strncpy(s.name, name, STUDENT_NAME_LEN - 1);
-    strncpy(s.email, email, STUDENT_EMAIL_LEN - 1);
-
-    s.age = age;
-    s.gpa = gpa;
-    s.is_active = true;
-
-    return s;
-}
+#include "student_table.h"
 
 int test_insert_and_find(void)
 {
@@ -33,7 +13,8 @@ int test_insert_and_find(void)
         "Alice",
         "alice@test.com",
         20,
-        3.8f);
+        3.8f,
+        true);
 
     int result =
         student_insert(tbl, &s) == STUDENT_OK &&
@@ -53,7 +34,8 @@ int test_duplicate_insert(void)
         "Alice",
         "alice@test.com",
         20,
-        3.8f);
+        3.8f,
+        true);
 
     StudentStatus r1 = student_insert(tbl, &s);
     StudentStatus r2 = student_insert(tbl, &s);
@@ -78,7 +60,7 @@ int test_table_full(void)
         snprintf(name, sizeof(name), "Student%d", i);
         snprintf(email, sizeof(email), "s%d@test.com", i);
 
-        Student s = make_student(id, name, email, 20, 3.5f);
+        Student s = make_student(id, name, email, 20, 3.5f, true);
 
         if (student_insert(tbl, &s) != STUDENT_OK)
         {
@@ -92,7 +74,8 @@ int test_table_full(void)
         "Extra",
         "extra@test.com",
         20,
-        3.0f);
+        3.0f,
+        true);
 
     StudentStatus status = student_insert(tbl, &extra);
 
@@ -110,7 +93,8 @@ int test_find_by_name(void)
         "Bob",
         "bob@test.com",
         21,
-        3.5f);
+        3.5f,
+        true);
 
     student_insert(tbl, &s);
 
@@ -135,7 +119,8 @@ int test_delete_student(void)
         "Charlie",
         "charlie@test.com",
         22,
-        3.2f);
+        3.2f,
+        true);
 
     student_insert(tbl, &s);
 
@@ -172,7 +157,8 @@ int test_update_student(void)
         "David",
         "david@test.com",
         20,
-        3.0f);
+        3.0f,
+        true);
 
     student_insert(tbl, &old_data);
 
@@ -181,7 +167,8 @@ int test_update_student(void)
         "David Updated",
         "updated@test.com",
         21,
-        3.9f);
+        3.9f,
+        true);
 
     StudentStatus status =
         student_update(tbl, "S004", &new_data);
@@ -208,7 +195,8 @@ int test_update_not_found(void)
         "Nobody",
         "nobody@test.com",
         30,
-        2.0f);
+        2.0f,
+        true);
 
     StudentStatus status =
         student_update(tbl, "S999", &s);
@@ -227,14 +215,16 @@ int test_student_count(void)
         "Alice",
         "alice@test.com",
         20,
-        3.8f);
+        3.8f,
+        true);
 
     Student s2 = make_student(
         "S002",
         "Bob",
         "bob@test.com",
         21,
-        3.6f);
+        3.6f,
+        true);
 
     student_insert(tbl, &s1);
     student_insert(tbl, &s2);
@@ -254,9 +244,12 @@ int test_sort_by_id(void)
 {
     StudentTable *tbl = student_table_create();
 
-    Student s1 = make_student("S003", "Charlie", "c@test.com", 20, 3.0f);
-    Student s2 = make_student("S001", "Alice", "a@test.com", 20, 3.0f);
-    Student s3 = make_student("S002", "Bob", "b@test.com", 20, 3.0f);
+    Student s1 = make_student("S003", "Charlie", "c@test.com", 20, 3.0f,
+        true);
+    Student s2 = make_student("S001", "Alice", "a@test.com", 20, 3.0f,
+        true);
+    Student s3 = make_student("S002", "Bob", "b@test.com", 20, 3.0f,
+        true);
 
     student_insert(tbl, &s1);
     student_insert(tbl, &s2);
@@ -278,9 +271,12 @@ int test_sort_by_name(void)
 {
     StudentTable *tbl = student_table_create();
 
-    Student s1 = make_student("S003", "Charlie", "c@test.com", 20, 3.0f);
-    Student s2 = make_student("S001", "Alice", "a@test.com", 20, 3.0f);
-    Student s3 = make_student("S002", "Bob", "b@test.com", 20, 3.0f);
+    Student s1 = make_student("S003", "Charlie", "c@test.com", 20, 3.0f,
+        true);
+    Student s2 = make_student("S001", "Alice", "a@test.com", 20, 3.0f,
+        true);
+    Student s3 = make_student("S002", "Bob", "b@test.com", 20, 3.0f,
+        true);
 
     student_insert(tbl, &s1);
     student_insert(tbl, &s2);
@@ -305,7 +301,8 @@ int test_insert_null_table(void)
         "Alice",
         "alice@test.com",
         20,
-        3.8f);
+        3.8f,
+        true);
 
     return student_insert(NULL, &s) ==
            STUDENT_ERR_INVALID_ARGUMENT;
@@ -333,7 +330,8 @@ int test_update_null_arguments(void)
         "Alice",
         "alice@test.com",
         20,
-        3.8f);
+        3.8f,
+        true);
 
     int result =
         student_update(NULL, "S001", &s) ==
@@ -372,7 +370,8 @@ int test_delete_not_found_nonempty(void)
         "Alice",
         "alice@test.com",
         20,
-        3.8f);
+        3.8f,
+        true);
     int result =
         student_insert(tbl, &s) == STUDENT_OK &&
         student_delete(tbl, "123456789") == STUDENT_ERR_NOT_FOUND;
@@ -402,7 +401,8 @@ int test_insert_invalid_student(void)
         "Alice",
         "alice@test.com",
         20,
-        3.5f);
+        3.5f,
+        true);
 
     StudentStatus status = student_insert(tbl, &s);
 
@@ -420,7 +420,8 @@ int test_update_invalid_student(void)
         "Alice",
         "alice@test.com",
         20,
-        3.5f);
+        3.5f,
+        true);
 
     student_insert(tbl, &s);
 
@@ -429,7 +430,8 @@ int test_update_invalid_student(void)
         "",
         "alice@test.com",
         20,
-        3.5f);
+        3.5f,
+        true);
 
     StudentStatus status =
         student_update(tbl, "S001", &bad);
@@ -517,7 +519,8 @@ int test_delete_twice(void)
         "Alice",
         "alice@test.com",
         20,
-        3.5f);
+        3.5f,
+        true);
 
     student_insert(tbl, &s);
 

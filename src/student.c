@@ -34,3 +34,24 @@ bool student_validate(const Student *student)
            student->gpa >= 0.0f &&
            student->gpa <= 4.0f;
 }
+
+Student make_student(
+    const char *id,
+    const char *name,
+    const char *email,
+    uint32_t age,
+    float gpa,
+    bool is_active)
+{
+    Student s = {0};
+
+    strncpy(s.student_id, id, STUDENT_ID_LEN - 1);
+    strncpy(s.name, name, STUDENT_NAME_LEN - 1);
+    strncpy(s.email, email, STUDENT_EMAIL_LEN - 1);
+
+    s.age = age;
+    s.gpa = gpa;
+    s.is_active = is_active;
+
+    return s;
+}

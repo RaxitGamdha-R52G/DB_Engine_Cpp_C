@@ -22,4 +22,12 @@ void student_display(const Student *s);
 
 bool student_validate(const Student *student);
 
+Student make_student(
+    const char *id,
+    const char *name,
+    const char *email,
+    uint32_t age,
+    float gpa,
+    bool is_active);
+
 #endif /* STUDENT_H  */

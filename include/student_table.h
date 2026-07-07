@@ -35,4 +35,6 @@ void student_display_all(const StudentTable *tbl);
 void student_sort_by_id(StudentTable *tbl);
 void student_sort_by_name(StudentTable *tbl);
 
+void student_print_status(const char *operation, StudentStatus status);
+
 #endif /* STUDENT_TABLE_H */
