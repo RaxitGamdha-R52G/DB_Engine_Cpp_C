@@ -42,4 +42,21 @@ int test_sort_by_id(void);
 int test_sort_by_name(void);
 int test_sort_null(void);
 
+/* Generic Algorithms */
+int test_student_foreach(void);
+int test_student_filter(void);
+int test_student_find_if(void);
+
+/* Generic Sort */
+int test_student_sort_custom(void);
+
+/* Status */
+int test_student_status_str(void);
+
+/* Serialization */
+int test_student_serialize(void);
+int test_student_deserialize(void);
+int test_student_serialize_null(void);
+int test_student_deserialize_null(void);
+
 #endif /* TEST_STUDENT_H */

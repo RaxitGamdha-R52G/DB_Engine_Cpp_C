@@ -245,11 +245,11 @@ int test_sort_by_id(void)
     StudentTable *tbl = student_table_create();
 
     Student s1 = make_student("S003", "Charlie", "c@test.com", 20, 3.0f,
-        true);
+                              true);
     Student s2 = make_student("S001", "Alice", "a@test.com", 20, 3.0f,
-        true);
+                              true);
     Student s3 = make_student("S002", "Bob", "b@test.com", 20, 3.0f,
-        true);
+                              true);
 
     student_insert(tbl, &s1);
     student_insert(tbl, &s2);
@@ -272,11 +272,11 @@ int test_sort_by_name(void)
     StudentTable *tbl = student_table_create();
 
     Student s1 = make_student("S003", "Charlie", "c@test.com", 20, 3.0f,
-        true);
+                              true);
     Student s2 = make_student("S001", "Alice", "a@test.com", 20, 3.0f,
-        true);
+                              true);
     Student s3 = make_student("S002", "Bob", "b@test.com", 20, 3.0f,
-        true);
+                              true);
 
     student_insert(tbl, &s1);
     student_insert(tbl, &s2);
@@ -533,6 +533,245 @@ int test_delete_twice(void)
     return result;
 }
 
+static int foreach_count = 0;
+
+static void count_callback(const Student *student, void *userdata)
+{
+    (void)student;
+    (void)userdata;
+
+    foreach_count++;
+}
+
+static bool gpa_above(const Student *student, void *ctx)
+{
+    float min = *(float *)ctx;
+    return student->gpa >= min;
+}
+
+static bool has_student_id(const Student *student, void *ctx)
+{
+    const char *id = ctx;
+    return strcmp(student->student_id, id) == 0;
+}
+
+static int compare_by_gpa(const void *a, const void *b)
+{
+    const Student *s1 = *(const Student *const *)a;
+    const Student *s2 = *(const Student *const *)b;
+
+    if (s1 == NULL && s2 == NULL)
+        return 0;
+
+    if (s1 == NULL)
+        return 1;
+
+    if (s2 == NULL)
+        return -1;
+
+    if (s1->gpa < s2->gpa)
+        return -1;
+
+    if (s1->gpa > s2->gpa)
+        return 1;
+
+    return 0;
+}
+
+int test_student_foreach(void)
+{
+    StudentTable *tbl = student_table_create();
+
+    foreach_count = 0;
+
+    Student s1 = make_student("S001", "Alice", "a@test.com", 20, 3.0f, true);
+    Student s2 = make_student("S002", "Bob", "b@test.com", 21, 3.5f, true);
+
+    student_insert(tbl, &s1);
+    student_insert(tbl, &s2);
+
+    student_foreach(tbl,
+                    count_callback,
+                    NULL);
+
+    student_table_destroy(tbl);
+
+    return foreach_count == 2;
+}
+
+int test_student_filter(void)
+{
+    StudentTable *tbl = student_table_create();
+
+    Student s1 = make_student("S001", "Alice", "a@test.com", 20, 3.9f, true);
+    Student s2 = make_student("S002", "Bob", "b@test.com", 20, 2.5f, true);
+    Student s3 = make_student("S003", "Charlie", "c@test.com", 20, 3.7f, true);
+
+    student_insert(tbl, &s1);
+    student_insert(tbl, &s2);
+    student_insert(tbl, &s3);
+
+    float min = 3.5f;
+
+    const Student *result[MAX_RECORDS];
+
+    uint32_t count =
+        student_filter(tbl,
+                       gpa_above,
+                       &min,
+                       result,
+                       MAX_RECORDS);
+
+    student_table_destroy(tbl);
+
+    return count == 2;
+}
+
+int test_student_find_if(void)
+{
+    StudentTable *tbl = student_table_create();
+
+    Student s = make_student(
+        "S123",
+        "Alice",
+        "a@test.com",
+        20,
+        3.5f,
+        true);
+
+    student_insert(tbl, &s);
+
+    const Student *found =
+        student_find_if(tbl,
+                        has_student_id,
+                        "S123");
+
+    int result =
+        found != NULL &&
+        strcmp(found->student_id, "S123") == 0;
+
+    student_table_destroy(tbl);
+
+    return result;
+}
+
+int test_student_sort_custom(void)
+{
+    StudentTable *tbl = student_table_create();
+
+    Student s1 = make_student("S001", "A", "a@test.com", 20, 2.0f, true);
+    Student s2 = make_student("S002", "B", "b@test.com", 20, 4.0f, true);
+    Student s3 = make_student("S003", "C", "c@test.com", 20, 3.0f, true);
+
+    student_insert(tbl, &s1);
+    student_insert(tbl, &s2);
+    student_insert(tbl, &s3);
+
+    student_sort(tbl,
+                 compare_by_gpa);
+
+    const Student *top =
+        student_find_by_id(tbl,
+                           "S002");
+
+    int result =
+        top != NULL &&
+        top->gpa == 4.0f;
+
+    student_table_destroy(tbl);
+
+    return result;
+}
+
+int test_student_status_str(void)
+{
+    return strcmp(student_status_str(STUDENT_OK),
+                  "SUCCESS") == 0 &&
+           strcmp(student_status_str(STUDENT_ERR_NOT_FOUND),
+                  "NOT FOUND") == 0;
+}
+
+int test_student_serialize(void)
+{
+    Student s = make_student(
+        "S001",
+        "Alice",
+        "a@test.com",
+        20,
+        3.8f,
+        true);
+
+    uint8_t buffer[sizeof(Student)];
+
+    return student_serialize(&s,
+                             buffer,
+                             sizeof(buffer)) == sizeof(Student);
+}
+
+int test_student_deserialize(void)
+{
+    Student s1 = make_student(
+        "S001",
+        "Alice",
+        "a@test.com",
+        20,
+        3.8f,
+        true);
+
+    uint8_t buffer[sizeof(Student)];
+
+    student_serialize(&s1,
+                      buffer,
+                      sizeof(buffer));
+
+    Student s2;
+
+    int result =
+        student_deserialize(&s2,
+                            buffer,
+                            sizeof(buffer));
+
+    return result &&
+           strcmp(s1.student_id,
+                  s2.student_id) == 0 &&
+           strcmp(s1.name,
+                  s2.name) == 0;
+}
+
+int test_student_serialize_null(void)
+{
+    uint8_t buffer[sizeof(Student)];
+
+    Student s = make_student(
+        "S001",
+        "Alice",
+        "a@test.com",
+        20,
+        3.8f,
+        true);
+
+    return student_serialize(NULL,
+                             buffer,
+                             sizeof(buffer)) == 0 &&
+           student_serialize(&s,
+                             NULL,
+                             sizeof(buffer)) == 0;
+}
+
+int test_student_deserialize_null(void)
+{
+    uint8_t buffer[sizeof(Student)];
+
+    Student s;
+
+    return !student_deserialize(NULL,
+                                buffer,
+                                sizeof(buffer)) &&
+           !student_deserialize(&s,
+                                NULL,
+                                sizeof(buffer));
+}
+
 int main(void)
 {
     /* Table lifecycle */
@@ -575,6 +814,21 @@ int main(void)
     RUN_TEST(test_sort_by_id);
     RUN_TEST(test_sort_by_name);
     RUN_TEST(test_sort_null);
+
+    /* Generic */
+    RUN_TEST(test_student_foreach);
+    RUN_TEST(test_student_filter);
+    RUN_TEST(test_student_find_if);
+    RUN_TEST(test_student_sort_custom);
+
+    /* Status */
+    RUN_TEST(test_student_status_str);
+
+    /* Serialization */
+    RUN_TEST(test_student_serialize);
+    RUN_TEST(test_student_deserialize);
+    RUN_TEST(test_student_serialize_null);
+    RUN_TEST(test_student_deserialize_null);
 
     return test_summary();
 }
