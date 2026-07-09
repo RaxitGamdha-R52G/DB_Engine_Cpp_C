@@ -14,11 +14,204 @@ struct StudentTable
     uint32_t count;
 };
 
+// Internal Helper Functions
+static void print_column(const char *str, int width)
+{
+    if (str == NULL)
+    {
+        printf("%-*s", width, "");
+        return;
+    }
+
+    size_t len = strlen(str);
+
+    if (len <= (size_t)width)
+    {
+        printf("%-*s", width, str);
+    }
+    else
+    {
+        printf("%.*s...", width - 3, str);
+    }
+}
+
+static void display_callback(const Student *student,
+                             void *userdata)
+{
+    (void)userdata;
+
+    print_column(student->student_id, ID_COL);
+    printf(" ");
+
+    print_column(student->name, NAME_COL);
+    printf(" ");
+
+    print_column(student->email, EMAIL_COL);
+    printf(" ");
+
+    printf("%-4u %-5.2f %-6s\n",
+           student->age,
+           student->gpa,
+           student->is_active ? "Yes" : "No");
+}
+
+static bool has_id(const Student *student,
+                   void *ctx)
+{
+    return strncmp(student->student_id,
+                   (const char *)ctx,
+                   STUDENT_ID_LEN) == 0;
+}
+
+static bool has_name(const Student *student,
+                     void *ctx)
+{
+    return strncmp(student->name,
+                   (const char *)ctx,
+                   STUDENT_NAME_LEN) == 0;
+}
+
+static int compare_student_id(const void *a,
+                              const void *b)
+{
+    const Student *s1 = *(const Student *const *)a;
+    const Student *s2 = *(const Student *const *)b;
+
+    if (s1 == NULL && s2 == NULL)
+        return 0;
+
+    if (s1 == NULL)
+        return 1;
+
+    if (s2 == NULL)
+        return -1;
+
+    return strncmp(s1->student_id,
+                   s2->student_id,
+                   STUDENT_ID_LEN);
+}
+
+static int compare_student_name(const void *a,
+                                const void *b)
+{
+    const Student *s1 = *(const Student *const *)a;
+    const Student *s2 = *(const Student *const *)b;
+
+    if (s1 == NULL && s2 == NULL)
+        return 0;
+
+    if (s1 == NULL)
+        return 1;
+
+    if (s2 == NULL)
+        return -1;
+
+    return strncmp(s1->name,
+                   s2->name,
+                   STUDENT_NAME_LEN);
+}
+
+// Table Functions
 StudentTable *student_table_create(void)
 {
     return calloc(1, sizeof(StudentTable));
 }
 
+void student_table_destroy(StudentTable *tbl)
+{
+    if (tbl == NULL)
+        return;
+
+    for (uint32_t i = 0; i < MAX_RECORDS; i++)
+    {
+        free(tbl->records[i]);
+        tbl->records[i] = NULL;
+    }
+
+    tbl->count = 0;
+
+    free(tbl);
+}
+
+// Generic Algorithms
+void student_foreach(const StudentTable *tbl,
+                     student_foreach_fn fn,
+                     void *userdata)
+{
+    if (!tbl || !fn)
+        return;
+
+    for (uint32_t i = 0; i < MAX_RECORDS; ++i)
+    {
+        if (tbl->records[i] != NULL)
+            fn(tbl->records[i], userdata);
+    }
+}
+
+uint32_t student_filter(const StudentTable *tbl,
+                        student_predicate_fn predicate,
+                        void *ctx,
+                        const Student **out,
+                        uint32_t max)
+{
+    if (tbl == NULL ||
+        predicate == NULL ||
+        out == NULL ||
+        max == 0)
+    {
+        return 0;
+    }
+
+    uint32_t found = 0;
+
+    for (uint32_t i = 0;
+         i < MAX_RECORDS && found < max;
+         i++)
+    {
+        if (tbl->records[i] == NULL)
+            continue;
+
+        if (predicate(tbl->records[i], ctx))
+        {
+            out[found++] = tbl->records[i];
+        }
+    }
+
+    return found;
+}
+
+const Student *student_find_if(const StudentTable *tbl,
+                               student_predicate_fn predicate,
+                               const void *ctx)
+{
+    if (!tbl || !predicate)
+        return NULL;
+
+    for (uint32_t i = 0; i < MAX_RECORDS; i++)
+    {
+        if (tbl->records[i] == NULL)
+            continue;
+
+        if (predicate(tbl->records[i], ctx))
+            return tbl->records[i];
+    }
+
+    return NULL;
+}
+
+void student_sort(StudentTable *tbl,
+                  int (*cmp)(const void *, const void *))
+{
+    if (tbl == NULL)
+        return;
+
+    qsort(tbl->records,
+          MAX_RECORDS,
+          sizeof(Student *),
+          cmp);
+}
+
+// CRUD Functions
 StudentStatus student_insert(StudentTable *tbl, const Student *student)
 {
     if (tbl == NULL || student == NULL)
@@ -55,48 +248,6 @@ StudentStatus student_insert(StudentTable *tbl, const Student *student)
     free(copy);
 
     return STUDENT_OK;
-}
-
-const Student *student_find_by_id(const StudentTable *tbl, const char *id)
-{
-    if (tbl == NULL || id == NULL)
-        return NULL;
-
-    uint32_t found = 0;
-
-    for (uint32_t i = 0; i < MAX_RECORDS && found < tbl->count; ++i)
-    {
-        if (tbl->records[i] == NULL)
-            continue;
-
-        ++found;
-
-        if (strncmp(tbl->records[i]->student_id, id, STUDENT_ID_LEN) == 0)
-            return tbl->records[i];
-    }
-
-    return NULL;
-}
-
-const Student *student_find_by_name(const StudentTable *tbl, const char *name)
-{
-    if (tbl == NULL || name == NULL)
-        return NULL;
-
-    uint32_t found = 0;
-
-    for (uint32_t i = 0; i < MAX_RECORDS && found < tbl->count; ++i)
-    {
-        if (tbl->records[i] == NULL)
-            continue;
-
-        ++found;
-
-        if (strncmp(tbl->records[i]->name, name, STUDENT_NAME_LEN) == 0)
-            return tbl->records[i];
-    }
-
-    return NULL;
 }
 
 StudentStatus student_delete(StudentTable *tbl, const char *id)
@@ -166,42 +317,25 @@ StudentStatus student_update(StudentTable *tbl, const char *id, const Student *n
     return STUDENT_ERR_NOT_FOUND;
 }
 
-void student_table_destroy(StudentTable *tbl)
+const Student *student_find_by_id(const StudentTable *tbl,
+                                  const char *id)
 {
-    if (tbl == NULL)
-        return;
+    if (tbl == NULL || id == NULL)
+        return NULL;
 
-    for (uint32_t i = 0; i < MAX_RECORDS; ++i)
-    {
-        free(tbl->records[i]);
-        tbl->records[i] = NULL;
-    }
-
-    tbl->count = 0;
-    free(tbl);
+    return student_find_if(tbl, has_id, id);
 }
 
-static void print_column(const char *str, int width)
+const Student *student_find_by_name(const StudentTable *tbl,
+                                    const char *name)
 {
-    if (str == NULL)
-    {
-        printf("%-*s", width, "");
-        return;
-    }
+    if (tbl == NULL || name == NULL)
+        return NULL;
 
-    size_t len = strlen(str);
-
-    if (len <= (size_t)width)
-    {
-        printf("%-*s", width, str);
-    }
-    else
-    {
-        /* Reserve 3 characters for "..." */
-        printf("%.*s...", width - 3, str);
-    }
+    return student_find_if(tbl, has_name, name);
 }
 
+// Display Function
 void student_display_all(const StudentTable *tbl)
 {
     if (tbl == NULL)
@@ -221,26 +355,7 @@ void student_display_all(const StudentTable *tbl)
            "ID", "Name", "Email", "Age", "GPA", "Active");
     printf("---------------------------------------------------------------------------------------\n");
 
-    for (uint32_t i = 0; i < MAX_RECORDS; i++)
-    {
-        Student *s = tbl->records[i];
-        if (s == NULL)
-            continue;
-
-        print_column(s->student_id, ID_COL);
-        printf(" ");
-
-        print_column(s->name, NAME_COL);
-        printf(" ");
-
-        print_column(s->email, EMAIL_COL);
-        printf(" ");
-
-        printf("%-4u %-5.2f %-6s\n",
-               s->age,
-               s->gpa,
-               s->is_active ? "Yes" : "No");
-    }
+    student_foreach(tbl, display_callback, NULL);
 
     printf("---------------------------------------------------------------------------------------\n");
 }
@@ -253,83 +368,39 @@ uint32_t student_count(const StudentTable *tbl)
     return tbl->count;
 }
 
-static int compare_student_id(const void *a, const void *b)
-{
-    const Student *s1 = *(const Student *const *)a;
-    const Student *s2 = *(const Student *const *)b;
-
-    if (s1 == NULL && s2 == NULL)
-        return 0;
-    if (s1 == NULL)
-        return 1;
-    if (s2 == NULL)
-        return -1;
-
-    return strncmp(s1->student_id, s2->student_id, STUDENT_ID_LEN);
-}
-
+// Sorting Functions
 void student_sort_by_id(StudentTable *tbl)
 {
-    if (tbl == NULL)
-        return;
-
-    qsort(tbl->records, MAX_RECORDS, sizeof(Student *), compare_student_id);
-}
-
-static int compare_student_name(const void *a, const void *b)
-{
-    const Student *s1 = *(const Student *const *)a;
-    const Student *s2 = *(const Student *const *)b;
-
-    if (s1 == NULL && s2 == NULL)
-        return 0;
-    if (s1 == NULL)
-        return 1;
-    if (s2 == NULL)
-        return -1;
-
-    return strncmp(s1->name, s2->name, STUDENT_NAME_LEN);
+    student_sort(tbl, compare_student_id);
 }
 
 void student_sort_by_name(StudentTable *tbl)
 {
-    if (tbl == NULL)
-        return;
+    student_sort(tbl, compare_student_name);
+}
 
-    qsort(tbl->records, MAX_RECORDS, sizeof(Student *), compare_student_name);
+// Status Functions
+const char *student_status_str(StudentStatus status)
+{
+    static const char *table[] =
+        {
+            "SUCCESS",
+            "INVALID ARGUMENT",
+            "NOT FOUND",
+            "ALREADY EXISTS",
+            "TABLE FULL",
+            "TABLE EMPTY",
+            "OUT OF MEMORY",
+            "VALIDATION FAILED"};
+
+    if (status < 0 ||
+        status >= (sizeof(table) / sizeof(table[0])))
+        return "UNKNOWN ERROR";
+
+    return table[status];
 }
 
 void student_print_status(const char *operation, StudentStatus status)
 {
-    printf("%-10s : ", operation);
-
-    switch (status)
-    {
-    case STUDENT_OK:
-        printf("SUCCESS\n");
-        break;
-    case STUDENT_ERR_INVALID_ARGUMENT:
-        printf("INVALID ARGUMENT\n");
-        break;
-    case STUDENT_ERR_NOT_FOUND:
-        printf("NOT FOUND\n");
-        break;
-    case STUDENT_ERR_ALREADY_EXISTS:
-        printf("ALREADY EXISTS\n");
-        break;
-    case STUDENT_ERR_TABLE_FULL:
-        printf("TABLE FULL\n");
-        break;
-    case STUDENT_ERR_TABLE_EMPTY:
-        printf("TABLE EMPTY\n");
-        break;
-    case STUDENT_ERR_OUT_OF_MEMORY:
-        printf("OUT OF MEMORY\n");
-        break;
-    case STUDENT_ERR_VALIDATE:
-        printf("VALIDATION FAILED\n");
-        break;
-    default:
-        printf("UNKNOWN ERROR\n");
-    }
+    printf("%-10s : %s\n", operation, student_status_str(status));
 }

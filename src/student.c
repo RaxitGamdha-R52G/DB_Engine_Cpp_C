@@ -7,18 +7,18 @@ void student_display(const Student *s)
 {
     if (s == NULL)
     {
-        printf("Student: NULL\n");
+        printf("Student : NULL\n");
         return;
     }
 
     printf("Student Information\n");
     printf("----------------------------\n");
-    printf("ID        : %s\n", s->student_id);
-    printf("Name      : %s\n", s->name);
-    printf("Email     : %s\n", s->email);
-    printf("Age       : %u\n", s->age);
-    printf("GPA       : %.2f\n", s->gpa);
-    printf("Active    : %s\n", s->is_active ? "Yes" : "No");
+    printf("ID      : %s\n", s->student_id);
+    printf("Name    : %s\n", s->name);
+    printf("Email   : %s\n", s->email);
+    printf("Age     : %u\n", s->age);
+    printf("GPA     : %.2f\n", s->gpa);
+    printf("Active  : %s\n", s->is_active ? "Yes" : "No");
     printf("----------------------------\n");
 }
 
@@ -29,10 +29,10 @@ bool student_validate(const Student *student)
            student->name[0] != '\0' &&
            student->email[0] != '\0' &&
            strchr(student->email, '@') != NULL &&
-           student->age >= 5 &&
+           student->age >= 1 &&
            student->age <= 120 &&
            student->gpa >= 0.0f &&
-           student->gpa <= 4.0f;
+           student->gpa <= 10.0f;
 }
 
 Student make_student(
@@ -54,4 +54,34 @@ Student make_student(
     s.is_active = is_active;
 
     return s;
+}
+
+size_t student_serialize(const Student *student,
+                         uint8_t *buf,
+                         size_t buf_len)
+{
+    if (!student || !buf)
+        return 0;
+
+    if (buf_len < sizeof(Student))
+        return 0;
+
+    memcpy(buf, student, sizeof(Student));
+
+    return sizeof(Student);
+}
+
+bool student_deserialize(Student *student,
+                         const uint8_t *buf,
+                         size_t len)
+{
+    if (!student || !buf)
+        return false;
+
+    if (len < sizeof(Student))
+        return false;
+
+    memcpy(student, buf, sizeof(Student));
+
+    return true;
 }
